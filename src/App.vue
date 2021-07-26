@@ -1,15 +1,23 @@
 <template>
   <div id="app">
-    {{loadedShots}}
-    <div style="display:none">
+    <!--div style="display:none">
       <video controls v-for="shot in shotNames" :key="shot" preload="auto" @canplaythrough="incrementReady()">
         <source :src="`shots/${shot}.mp4`" type="video/mp4" >
       </video>
-    </div>
+    </div-->
     <div style="width:100vw">
       <!--<img :src="`shots/thumbnails/${currShot}.jpg`"-->
-      <video controls preload="auto" autoplay :src="`shots/${currShot}.mp4`">
-      </video>
+      <!--video controls preload="auto" autoplay :src="`shots/${currShot}.mp4`">
+      </video-->
+      <video
+        v-for="shot in shotNames" :key="shot" 
+        preload="auto" 
+        @canplaythrough="incrementReady()"
+        :style="{display:(currShot == shot)?'':'none'}"
+        :id="`video-${shot}`" 
+        :src="`shots/${shot}.mp4`"
+        @ended="queueUpNextShot()"
+         />
     </div>
   </div>
 </template>
@@ -395,19 +403,30 @@ export default {
       this.loadedShots++;
     },
     queueUpNextShot: function () {      
+      let lastShotVideo = document.getElementById(`video-${this.currShot}`);
+
       // Given current shot, select a random markov transition and note the to shot
       let nextShotBaseName = _.sample(_.filter(this.authenticMarkovTransitions, (transition) => (transition.from == this.currShot.split('-')[0]))).to;
       if (nextShotBaseName == 'END') {
         nextShotBaseName = 'ABindoors';
       }
-      this.currShot = _.sample(_.filter(this.shotNames, (shot) => (shot.startsWith(nextShotBaseName))));
+
+      let nextShot = _.sample(_.filter(this.shotNames, (shot) => (shot.startsWith(nextShotBaseName))));
+      let shotVideo = document.getElementById(`video-${nextShot}`);
+      shotVideo.currentTime = 0;
+      shotVideo.play();
+      this.currShot = nextShot;
+
+      // Cleanup!
+      lastShotVideo.currentTime = 0;
+
       // Get frames of selected destination shot, and use that to time the next transition
-      if (this.currShot != undefined) {
+      /*if (this.currShot != undefined) {
         setTimeout(() => {
           this.queueUpNextShot();
         }, this.currShot.split('-')[1]*(1000.0/30.0));
         console.log(this.currShot.split('-')[1]*(1000.0/30.0))
-      }
+      }*/
     },
   },
   mounted() {
