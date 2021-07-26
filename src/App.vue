@@ -1,7 +1,15 @@
 <template>
   <div id="app">
+    {{loadedShots}}
+    <div style="display:none">
+      <video controls v-for="shot in shotNames" :key="shot" preload="auto" @canplaythrough="incrementReady()">
+        <source :src="`shots/${shot}.mp4`" type="video/mp4" >
+      </video>
+    </div>
     <div style="width:100vw">
-      <img :src="`shots/thumbnails/${currShot}.jpg`">
+      <!--<img :src="`shots/thumbnails/${currShot}.jpg`"-->
+      <video controls preload="auto" autoplay :src="`shots/${currShot}.mp4`">
+      </video>
     </div>
   </div>
 </template>
@@ -21,6 +29,7 @@ export default {
   data() {
     return {
       currShot: "ABindoors-125",
+      loadedShots: 0,
       shotNames: [
         "ABindoors-125",
         "Adoors-24",
@@ -382,9 +391,11 @@ export default {
     }
   },
   methods: {
+    incrementReady: function () {
+      this.loadedShots++;
+    },
     queueUpNextShot: function () {      
       // Given current shot, select a random markov transition and note the to shot
-      //this.currShot = _.sample(_.filter(this.authenticMarkovTransitions, (transition) => (transition.from == this.currShot)));
       let nextShotBaseName = _.sample(_.filter(this.authenticMarkovTransitions, (transition) => (transition.from == this.currShot.split('-')[0]))).to;
       if (nextShotBaseName == 'END') {
         nextShotBaseName = 'ABindoors';
