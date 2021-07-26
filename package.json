@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "cytoscape": "^3.19.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "vue": "^2.6.11",

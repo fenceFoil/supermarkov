@@ -1,41 +1,59 @@
 <template>
   <div id="app">
+    <div 
+      id="splashscreen" 
+      class="gentlebg" 
+      :style="{display:(showSplash)?'':'none'}"
+      >
+      <div id="splashGraph">
+      </div>
+      <div style="z-index: 20000">
+        Clips Loaded: {{Math.min(loadedShots, shotNames.length)}} of {{shotNames.length}}
+      </div>  
+      <div style="z-index: 20000">
+        <a href="#" @click="clearSplashscreen()">Begin</a>
+      </div> 
+    </div>
     <!--div style="display:none">
       <video controls v-for="shot in shotNames" :key="shot" preload="auto" @canplaythrough="incrementReady()">
         <source :src="`shots/${shot}.mp4`" type="video/mp4" >
       </video>
     </div-->
-    <div style="width:100vw">
+    <div style="width:100vw;display:flex;justify-content:center;">
       <!--<img :src="`shots/thumbnails/${currShot}.jpg`"-->
       <!--video controls preload="auto" autoplay :src="`shots/${currShot}.mp4`">
       </video-->
-      <video
-        v-for="shot in shotNames" :key="shot" 
-        preload="auto" 
-        @canplaythrough="incrementReady()"
-        :style="{display:(currShot == shot)?'':'none'}"
-        :id="`video-${shot}`" 
-        :src="`shots/${shot}.mp4`"
-        @ended="queueUpNextShot()"
-         />
+      <!-- :style="{display:(currShot == shot)?'':'none'}" -->
+      <div style="position:relative;width: min(100vw, 990px);">
+        <video
+          v-for="shot in shotNames" :key="shot" 
+          preload="auto" 
+          @canplaythrough="incrementReady()"
+          :style="{zIndex:(currShot == shot)?'100':'10'}"
+          :id="`video-${shot}`" 
+          :src="`shots/${shot}.mp4`"
+          @ended="queueUpNextShot(shot)"
+          style="width: min(100vw, 990px);position:absolute;top:0;left:0;"
+          />
+        <img src="shots/thumbnails/Adoors-24.jpg">
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import _ from 'lodash';
+import cytoscape from 'cytoscape';
 
 export default {
   name: 'App',
   components: {
   },
   computed: {
-    laneIds() { // XXX remove me
-      return _.range(4);
-    }
   },
   data() {
     return {
+      showSplash: true,
       currShot: "ABindoors-125",
       loadedShots: 0,
       shotNames: [
@@ -399,10 +417,20 @@ export default {
     }
   },
   methods: {
+    clearSplashscreen: function() {
+      this.showSplash=false;
+      this.queueUpNextShot();
+    },
     incrementReady: function () {
       this.loadedShots++;
     },
-    queueUpNextShot: function () {      
+    queueUpNextShot: function (caller=null) {      
+      if (this.showSplash) {
+        return;
+      }
+      if ((caller != null) && (caller != this.currShot)) {
+        return;
+      }
       let lastShotVideo = document.getElementById(`video-${this.currShot}`);
 
       // Given current shot, select a random markov transition and note the to shot
@@ -430,7 +458,80 @@ export default {
     },
   },
   mounted() {
-    this.queueUpNextShot();
+    let elements = []
+
+
+    // Some ECMAScript 2017 goodness
+    function noDupes2(...args){
+      return [].concat(...args).filter((v, i, arr) => arr.indexOf(v)==i);
+    }
+
+    noDupes2(this.shotNames.map(x => x.split('-')[0])).forEach((shotName) => {
+      elements.push(
+        {
+          group: 'nodes',
+          data: {
+            id: shotName
+          },
+          position: {
+            x: Math.random()*150,
+            y: Math.random()*150
+          }
+        }
+      )
+    })
+/*
+    this.authenticMarkovTransitions.forEach((transition, i) => {
+      if (transition.to != 'END' && transition.from != 'START') {
+        elements.push(
+          {
+            group: 'edges',
+            data: {
+              id: `edge${i}`,
+              source: transition.from,
+              target: transition.to
+            }
+          }
+        )
+      }
+    })*/
+
+    let cy = cytoscape({
+        wheelSensitivity: 0.3,
+        userZoomingEnabled: false,
+        userPanningEnabled: false,
+        boxSelectionEnabled: false,
+        autoungrabify: true,
+        autolock: true,
+        container: document.getElementById('splashGraph'),
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': '#F5876F',
+              'width': '5',
+              'height': '5'
+            }
+          },
+
+          {
+            selector: 'edge',
+            style: {
+              'width': 3,
+              'line-color': '#F5876F',
+              'target-arrow-color': '#F5876F',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier'
+            }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          animate: true,
+          padding: 50,
+        }
+      });
   },
 }
 </script>
@@ -445,6 +546,48 @@ export default {
 
   display: flex;
   place-items: center;
+  overflow:hidden;
+}
+
+#splashscreen {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:10000;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-evenly;
+  font-size: 4em;
+}
+
+#splashscreen a {
+  color: white;
+}
+
+#splashscreen a:visited {
+  color: white;
+}
+
+#splashGraph {
+  position: absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height: 100vh;
+  z-index: 10001;
+}
+
+// I guess I'm bugfixing cytoscape.js now
+#splashGraph div canvas {
+  left:0;
+}
+
+.gentlebg {
+  background: rgb(229,135,76);
+  background: linear-gradient(125deg, rgba(229,135,76,1) 0%, rgba(245,203,135,1) 33%, rgba(253,210,184,1) 100%); 
+
 }
 
 </style>
