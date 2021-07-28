@@ -1,4 +1,12 @@
-# super-markov-robot-solar-123
+# Super Markov Robot Solar 123: Infinite Anime Drama!
+
+https://williamkarnavas.com/supermarkov
+
+## Inspiration 
+
+https://www.youtube.com/watch?v=K-vDFLh52uM&list=PLEXhX0vbqS20aEMJ1d11w0mYgS4tggadS&index=1
+
+---
 
 ## Project setup
 ```
